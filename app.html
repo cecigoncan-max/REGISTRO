@@ -357,6 +357,12 @@ footer{background:linear-gradient(135deg,#064e4e,#0b7a7a)}
 .consulta-cab{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
 .consulta-cab .perfil-avatar{width:64px;height:64px;font-size:1.5rem}
 @media print{.consulta-cab .perfil-avatar{border-color:#0b7a7a;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+/* ---------- Navegación en celular ---------- */
+@media(max-width:819px){
+  .top .wrap{flex-wrap:wrap;gap:10px 14px}
+  .top nav{display:flex;flex:1 0 100%;flex-wrap:wrap;margin-left:0;gap:6px;padding-top:10px;border-top:1px solid var(--borde)}
+  .top nav a{display:inline-flex;align-items:center;min-height:38px;padding:6px 11px;border-radius:999px;background:var(--azul-cl);color:var(--azul-osc);font-size:.88rem;line-height:1.2}
+}
 </style>
 </head>
 <body>
