@@ -346,6 +346,17 @@ details.receta:nth-of-type(3n+3){border-left-color:#f2b630}
 .etiqueta:nth-of-type(2){background:#d6f3f0;color:#064e4e}
 footer{background:linear-gradient(135deg,#064e4e,#0b7a7a)}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.progreso>div{transition:none}}
+/* ---------- Foto de perfil opcional ---------- */
+.perfil-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#fff;border:1px solid var(--borde);border-top:5px solid var(--azul);border-radius:var(--radio);padding:16px 18px;margin:16px 0}
+.perfil-avatar{width:68px;height:68px;border-radius:50%;overflow:hidden;flex:none;background:var(--azul-cl);border:3px solid var(--azul);display:flex;align-items:center;justify-content:center;font-size:1.75rem;font-weight:700;color:var(--azul-osc)}
+.perfil-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.perfil-info{flex:1 1 220px}
+.perfil-info strong{display:block;color:var(--azul-osc);font-size:1.05rem}
+.perfil-info small{display:block;color:var(--gris);font-size:.88rem;line-height:1.4}
+.perfil-acciones{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.consulta-cab{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.consulta-cab .perfil-avatar{width:64px;height:64px;font-size:1.5rem}
+@media print{.consulta-cab .perfil-avatar{border-color:#0b7a7a;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style>
 </head>
 <body>
@@ -353,7 +364,7 @@ footer{background:linear-gradient(135deg,#064e4e,#0b7a7a)}
 
 <header class="top no-print">
   <div class="wrap">
-    <img class="logo" src="logo-hospital.png" alt="Logo del Hospital Regional Río Grande" onerror="this.style.display='none'">
+    <img class="logo" src="./WhatsApp%20Image%202026-11-14%20at%2011.06.11.jpeg" alt="Logo del Hospital Regional Río Grande" onerror="if(!this.dataset.f){this.dataset.f='1';this.src='./assets/aistudio/WhatsApp_Image_2026-11-14_at_11.06.11_482d5138.jpeg';}else{this.style.display='none';}">
     <div class="nombre">Servicio de Nutrición
       <small>Hospital Regional Río Grande · Tierra del Fuego</small>
     </div>
@@ -466,6 +477,20 @@ footer{background:linear-gradient(135deg,#064e4e,#0b7a7a)}
   <div class="wrap">
     <h2 id="t-her" class="no-print">Mi registro</h2>
     <p class="no-print">Tus datos se guardan solo en este celular o computadora. No se envían a ningún lado.</p>
+
+    <div class="perfil-bar no-print" aria-label="Foto de perfil opcional">
+      <div class="perfil-avatar" id="perfil-avatar"><span aria-hidden="true">👤</span></div>
+      <div class="perfil-info">
+        <strong id="perfil-titulo">Tu perfil (opcional)</strong>
+        <small>Si querés, podés agregar una foto tuya para personalizar tu registro. Se guarda solo en este dispositivo.</small>
+        <span class="estado" id="estado-foto" role="status" aria-live="polite"></span>
+      </div>
+      <div class="perfil-acciones">
+        <input type="file" id="input-foto" accept="image/*" style="position:absolute;opacity:0;width:1px;height:1px">
+        <button class="btn sec chico" type="button" id="btn-elegir-foto">📷 Elegir foto</button>
+        <button class="btn peligro chico" type="button" id="btn-quitar-foto" hidden>Quitar foto</button>
+      </div>
+    </div>
 
     <div class="tabs" role="tablist" aria-label="Secciones de mi registro">
       <button class="tab" role="tab" id="tab-hoy" aria-controls="p-hoy" aria-selected="true">📝 Mi día</button>
@@ -909,11 +934,12 @@ var CARAS=[[1,'😞','Muy mal'],[2,'🙁','Mal'],[3,'😐','Normal'],[4,'🙂','
 
 /* ---------- Estado ---------- */
 var S=cargar();
-function vacio(){return {entries:{},weights:[],goals:{},nombre:'',config:{},compras:{items:[]}};}
+function vacio(){return {entries:{},weights:[],goals:{},nombre:'',foto:'',config:{},compras:{items:[]}};}
+function fotoValida(u){return typeof u==='string'&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(u);}
 function cargar(){
   try{
     var r=JSON.parse(localStorage.getItem(KEY));
-    if(r&&typeof r==='object'){var v=vacio();for(var k in v){if(r[k]!==undefined)v[k]=r[k];}return v;}
+    if(r&&typeof r==='object'){var v=vacio();for(var k in v){if(r[k]!==undefined)v[k]=r[k];}if(v.foto&&!fotoValida(v.foto))v.foto='';return v;}
   }catch(e){}
   return vacio();
 }
@@ -951,6 +977,79 @@ function tieneRegistro(e){
   if(!e)return false;
   for(var k in e){if(e[k]!==''&&e[k]!==false&&e[k]!==0&&e[k]!==undefined&&e[k]!==null)return true;}
   return false;
+}
+
+/* ---------- Foto de perfil opcional ---------- */
+function avatarHTML(){
+  var alt=S.nombre?'Foto de perfil de '+esc(S.nombre):'Tu foto de perfil';
+  if(fotoValida(S.foto))return '<img src="'+S.foto+'" alt="'+alt+'">';
+  var ini=S.nombre?esc(S.nombre.trim().charAt(0).toUpperCase()):'👤';
+  return '<span aria-hidden="true">'+ini+'</span>';
+}
+function renderFoto(){
+  var av=$('perfil-avatar'),tit=$('perfil-titulo'),btnQ=$('btn-quitar-foto'),btnE=$('btn-elegir-foto');
+  if(!av)return;
+  av.innerHTML=avatarHTML();
+  if(tit)tit.textContent=S.nombre?S.nombre:'Tu perfil (opcional)';
+  if(btnQ)btnQ.hidden=!fotoValida(S.foto);
+  if(btnE)btnE.textContent=fotoValida(S.foto)?'📷 Cambiar foto':'📷 Elegir foto';
+}
+function procesarImagen(file,cb){
+  var reader=new FileReader();
+  reader.onerror=function(){cb(new Error('lectura'));};
+  reader.onload=function(){
+    var img=new Image();
+    img.onerror=function(){cb(new Error('imagen'));};
+    img.onload=function(){
+      var max=240,w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+      if(!w||!h){cb(new Error('tamano'));return;}
+      var lado=Math.min(w,h),sx=Math.round((w-lado)/2),sy=Math.round((h-lado)/2);
+      var canvas=document.createElement('canvas');
+      canvas.width=max;canvas.height=max;
+      var ctx=canvas.getContext('2d');
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(0,0,max,max);
+      ctx.drawImage(img,sx,sy,lado,lado,0,0,max,max);
+      try{
+        var dataUrl=canvas.toDataURL('image/jpeg',0.82);
+        cb(null,dataUrl);
+      }catch(err){cb(err);}
+    };
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+if($('btn-elegir-foto')&&$('input-foto')){
+  $('btn-elegir-foto').addEventListener('click',function(){$('input-foto').click();});
+  $('input-foto').addEventListener('change',function(ev){
+    var f=ev.target.files&&ev.target.files[0];
+    if(!f)return;
+    if(!f.type||f.type.indexOf('image/')!==0){
+      estado('Elegí un archivo de imagen (JPG o PNG).','estado-foto');
+      ev.target.value='';
+      return;
+    }
+    estado('Procesando foto…','estado-foto');
+    procesarImagen(f,function(err,dataUrl){
+      ev.target.value='';
+      if(err||!dataUrl){
+        estado('No se pudo cargar esa foto. Probá con otra imagen.','estado-foto');
+        return;
+      }
+      S.foto=dataUrl;
+      guardar('Foto guardada en este dispositivo ✓','estado-foto');
+      renderFoto();
+      if($('p-consulta')&&!$('p-consulta').hidden)renderConsulta();
+    });
+  });
+}
+if($('btn-quitar-foto')){
+  $('btn-quitar-foto').addEventListener('click',function(){
+    S.foto='';
+    guardar('Foto quitada','estado-foto');
+    renderFoto();
+    if($('p-consulta')&&!$('p-consulta').hidden)renderConsulta();
+  });
 }
 
 /* ---------- Pestañas ---------- */
@@ -1187,8 +1286,10 @@ function renderConsulta(){
   var dias=ultimosDias(7);var reg=0,suma=0;
   dias.forEach(function(d){var e=S.entries[d];if(tieneRegistro(e)){reg++;suma+=pctDia(e).pct;}});
   var prom=reg?Math.round(suma/reg):0;
-  var h='<h3>Resumen para mi control'+(S.nombre?' · '+esc(S.nombre):'')+'</h3>';
-  h+='<p class="solo-imprimir">Hospital Regional Río Grande · Servicio de Nutrición · Emitido el '+esc(fmt(hoy(),true))+'</p>';
+  var h='<div class="consulta-cab">';
+  if(fotoValida(S.foto))h+='<div class="perfil-avatar">'+avatarHTML()+'</div>';
+  h+='<div><h3 style="margin:0">Resumen para mi control'+(S.nombre?' · '+esc(S.nombre):'')+'</h3>';
+  h+='<p class="solo-imprimir" style="margin:4px 0 0">Hospital Regional Río Grande · Servicio de Nutrición · Emitido el '+esc(fmt(hoy(),true))+'</p></div></div>';
   h+='<div class="kpis"><div class="kpi"><b>'+reg+' de 7</b><span>días registrados</span></div><div class="kpi"><b>'+prom+'%</b><span>cumplimiento promedio</span></div></div>';
   h+='<h3>Mi curva de peso</h3>'+graficoPeso();
   h+='<div class="kpis">'+kpisPeso()+'</div>';
@@ -1215,7 +1316,7 @@ function renderConsulta(){
   h+='<p class="solo-imprimir" style="font-size:.8rem;margin-top:20px">Registro realizado por el propio paciente. Herramienta educativa que no reemplaza la consulta profesional.</p>';
   $('consulta-contenido').innerHTML=h;
 }
-$('nombre').addEventListener('input',function(){S.nombre=$('nombre').value;guardar();renderConsulta();});
+$('nombre').addEventListener('input',function(){S.nombre=$('nombre').value;guardar();renderFoto();renderConsulta();});
 $('btn-imprimir').addEventListener('click',function(){window.print();});
 
 /* ---------- DATOS ---------- */
@@ -1235,7 +1336,8 @@ $('file-import').addEventListener('change',function(ev){
       if(!confirm('Esto reemplaza los datos actuales de este dispositivo por los de la copia. ¿Continuar?'))return;
       var v=vacio();for(var k in v){if(d[k]!==undefined)v[k]=d[k];}
       if(!Array.isArray(v.weights))v.weights=[];
-      S=v;guardar('Copia cargada ✓');renderForm();mostrarTab('hoy');document.dispatchEvent(new Event('rn-cambio'));
+      if(v.foto&&!fotoValida(v.foto))v.foto='';
+      S=v;guardar('Copia cargada ✓');renderForm();renderFoto();mostrarTab('hoy');document.dispatchEvent(new Event('rn-cambio'));
     }catch(e){alert('No se pudo leer el archivo. Asegurate de elegir una copia descargada desde esta página.');}
     ev.target.value='';
   };
@@ -1245,11 +1347,12 @@ $('btn-borrar').addEventListener('click',function(){
   if(!confirm('Se van a borrar todos tus registros, pesos y objetivos de este dispositivo. Esto no se puede deshacer. ¿Querés continuar?'))return;
   S=vacio();
   try{localStorage.removeItem(KEY);}catch(e){}
-  renderForm();mostrarTab('hoy');estado('Datos borrados');document.dispatchEvent(new Event('rn-cambio'));
+  renderForm();renderFoto();mostrarTab('hoy');estado('Datos borrados');document.dispatchEvent(new Event('rn-cambio'));
 });
 
 window.RN={get:function(){return S;},save:function(m,d){guardar(m,d);}};
 renderForm();
+renderFoto();
 })();
 </script>
 <script>
